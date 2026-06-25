@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D2Cエキスパート検定3級 練習問題クイズ</title>
+<style>
+/* ===== テーマ変数 ===== */
+:root{
+  --c-bg:#f4f6f9;
+  --c-surface:#ffffff;
+  --c-ink:#1d2433;
+  --c-sub:#5b6678;
+  --c-line:#e3e8f0;
+  --c-primary:#2f6df6;
+  --c-primary-d:#1f54c9;
+  --c-correct:#1aa179;
+  --c-correct-bg:#e6f7f1;
+  --c-wrong:#e0455e;
+  --c-wrong-bg:#fdecef;
+  --c-hook:#8a5a00;
+  --c-hook-bg:#fff6e0;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(29,36,51,.06);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  background:var(--c-bg);
+  color:var(--c-ink);
+  line-height:1.7;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ===== レイアウト ===== */
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 80px;}
+.header{text-align:center;padding:14px 0 8px;}
+.header__title{font-size:1.15rem;font-weight:700;margin:0;}
+.header__sub{font-size:.8rem;color:var(--c-sub);margin:4px 0 0;}
+
+/* モード切替タブ */
+.tabs{display:flex;gap:6px;background:var(--c-surface);padding:6px;border-radius:var(--radius);box-shadow:var(--shadow);margin:14px 0;}
+.tabs__btn{flex:1;border:0;background:transparent;color:var(--c-sub);font-size:.85rem;font-weight:600;padding:10px 4px;border-radius:10px;cursor:pointer;transition:.15s;}
+.tabs__btn--active{background:var(--c-primary);color:#fff;}
+
+/* コントロール（テストモード用） */
+.controls{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;background:var(--c-surface);padding:12px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;font-size:.85rem;}
+.controls label{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--c-sub);}
+.controls input{width:16px;height:16px;accent-color:var(--c-primary);}
+
+/* 進捗バー */
+.progress{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:.82rem;color:var(--c-sub);}
+.progress__bar{flex:1;height:8px;background:var(--c-line);border-radius:99px;overflow:hidden;}
+.progress__fill{height:100%;width:0;background:var(--c-primary);transition:width .25s;}
+
+/* ===== カード ===== */
+.card{background:var(--c-surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 18px;margin-bottom:14px;}
+.card__meta{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.tag{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:99px;background:#eef2fb;color:var(--c-primary-d);}
+.tag--type{background:#f0ecff;color:#6b3fd1;}
+.card__q{font-size:1.02rem;font-weight:700;margin:0 0 14px;}
+
+/* 選択肢 */
+.opts{display:flex;flex-direction:column;gap:9px;}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;border:1.5px solid var(--c-line);background:var(--c-surface);border-radius:11px;padding:12px 13px;font-size:.92rem;color:var(--c-ink);cursor:pointer;transition:.12s;font-family:inherit;line-height:1.6;}
+.opt:hover:not(:disabled){border-color:var(--c-primary);background:#f7f9ff;}
+.opt:disabled{cursor:default;}
+.opt__num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--c-line);color:var(--c-sub);font-size:.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.opt--correct{border-color:var(--c-correct);background:var(--c-correct-bg);}
+.opt--correct .opt__num{background:var(--c-correct);color:#fff;}
+.opt--wrong{border-color:var(--c-wrong);background:var(--c-wrong-bg);}
+.opt--wrong .opt__num{background:var(--c-wrong);color:#fff;}
+
+/* 解説 */
+.explain{margin-top:14px;padding:13px 14px;border-radius:11px;background:#f7f9fc;border:1px solid var(--c-line);font-size:.88rem;display:none;}
+.explain--show{display:block;animation:fade .2s;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;}}
+.explain__line{margin:0 0 8px;}
+.explain__line:last-child{margin-bottom:0;}
+.explain__label{font-weight:700;}
+.explain__hook{background:var(--c-hook-bg);color:var(--c-hook);padding:8px 11px;border-radius:8px;font-weight:600;}
+.verdict{font-weight:700;margin:0 0 8px;}
+.verdict--ok{color:var(--c-correct);}
+.verdict--ng{color:var(--c-wrong);}
+
+/* ボタン */
+.btn{display:block;width:100%;border:0;border-radius:11px;padding:14px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s;}
+.btn--primary{background:var(--c-primary);color:#fff;}
+.btn--primary:hover{background:var(--c-primary-d);}
+.btn--ghost{background:var(--c-surface);color:var(--c-primary);border:1.5px solid var(--c-line);}
+.btn--sm{padding:9px;font-size:.85rem;}
+.nav{display:flex;gap:10px;margin-top:6px;}
+
+/* 結果画面 */
+.result{text-align:center;padding:30px 18px;}
+.result__score{font-size:2.6rem;font-weight:800;margin:8px 0;}
+.result__score small{font-size:1rem;color:var(--c-sub);font-weight:600;}
+.result__msg{font-size:.95rem;color:var(--c-sub);margin-bottom:6px;}
+
+/* 答え表示の行スタイル（テスト結果の復習リストで使用） */
+.sheet__row{display:flex;gap:12px;padding:13px 4px;border-bottom:1px solid var(--c-line);}
+.sheet__row:last-child{border-bottom:0;}
+.sheet__no{flex:none;width:30px;font-weight:800;color:var(--c-primary);}
+.sheet__body{flex:1;}
+.sheet__theme{font-size:.72rem;color:var(--c-sub);}
+.sheet__ans{font-weight:700;margin:2px 0;}
+.sheet__ans b{color:var(--c-correct);}
+.sheet__hook{font-size:.82rem;color:var(--c-hook);background:var(--c-hook-bg);display:inline-block;padding:2px 8px;border-radius:7px;margin-top:3px;}
+.note{font-size:.78rem;color:var(--c-sub);background:#eef2fb;border-radius:10px;padding:11px 13px;margin-bottom:14px;}
+
+/* 暗記カードの答え表示ボタン領域 */
+.reveal{margin-top:14px;}
+
+@media print{
+  body{background:#fff;}
+  .tabs,.controls,.progress,.btn,.nav{display:none!important;}
+  .card,.note{box-shadow:none;border:1px solid #ccc;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <h1 class="header__title">D2Cエキスパート検定3級 練習問題</h1>
+    <p class="header__sub">全50問／暗記用クイズ &middot; 本番:60分100問・70点で合格</p>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tabs__btn tabs__btn--active" data-mode="flash">🃏 暗記カード</button>
+    <button class="tabs__btn" data-mode="test">✏️ テスト</button>
+  </nav>
+
+  <div id="app"></div>
+</div>
+
+<script>
+/* ===== 問題データ ===== */
+/* correct は0始まりのインデックス（0=①, 1=②, 2=③, 3=④） */
+const QUESTIONS = [
+  {id:1, theme:"マーケティング定義", type:"適切を選択", q:"日本マーケティング協会が定めたマーケティングの定義について正しいものを一つ選べ",
+   options:[
+     "（マーケティングとは）顧客や社会と共に価値を創造し、その価値を広く浸透させることによって、ステークホルダーとの関係性を醸成し、より豊かで持続可能な社会を実現するための構想でありプロセスである。",
+     "マーケティングとは、顧客、依頼人、パートナー、社会全体にとって価値のある提供物を創造・伝達・配達・交換するための活動であり、一連の制度、そしてプロセスである。",
+     "マーケティングとは自組織が個々に識別した顧客に対し、その顧客データを活用して設計した価値提供プロセスに基づき、直接顧客に働きかけ、組織の目的を達成する活動である。",
+     "マーケティングとは、個人や組織の目標を満足させる交換を創造するために、アイディア、商品、サービスの概念化、価格設定、販売促進、流通を計画し、実行するプロセスである。"],
+   correct:0,
+   explanation:"日本マーケティング協会の定義（2024年制定）は①。共通キーワードとして「企業と顧客の価値共創」「ステークホルダーとの関係性の構築」「社会課題の解決」「持続的成長」などが挙げられている。",
+   hook:"日本MA＝価値共創・ステークホルダー・持続可能な社会"},
+
+  {id:2, theme:"マーケティング定義", type:"適切を選択", q:"アメリカマーケティング協会が定めたマーケティングの定義について正しいものを一つ選べ",
+   options:[
+     "マーケティングとは自組織が個々に識別した顧客に対し、その顧客データを活用して設計した価値提供プロセスに基づき、直接顧客に働きかけ、組織の目的を達成する活動である。",
+     "マーケティングとは、顧客、依頼人、パートナー、社会全体にとって価値のある提供物を創造・伝達・配達・交換するための活動であり、一連の制度、そしてプロセスである。",
+     "マーケティングとは、個人や組織の目標を満足させる交換を創造するために、アイディア、商品、サービスの概念化、価格設定、販売促進、流通を計画し、実行するプロセスである。",
+     "（マーケティングとは）顧客や社会と共に価値を創造し、その価値を広く浸透させることによって、ステークホルダーとの関係性を醸成し、より豊かで持続可能な社会を実現するための構想でありプロセスである。"],
+   correct:1,
+   explanation:"アメリカマーケティング協会の定義（2007年制定）は②。なお③は1985年制定の定義で、4P（Product、Price、Place、Promotion）の考え方がストレートに出ている。",
+   hook:"AMA2007＝創造・伝達・配達・交換／顧客・依頼人・パートナー・社会"},
+
+  {id:3, theme:"ダイレクトマーケティング定義", type:"適切を選択", q:"日本ダイレクトマーケティング学会が定めたダイレクトマーケティングの定義について正しいものを一つ選べ",
+   options:[
+     "ダイレクトマーケティングとは自組織が個々に識別した顧客に対し、その顧客データを活用して設計した価値提供プロセスに基づき、直接顧客に働きかけ、組織の目的を達成する活動である。",
+     "ダイレクトマーケティングとは、顧客、依頼人、パートナー、社会全体にとって価値のある提供物を創造・伝達・配達・交換するための活動であり、一連の制度、そしてプロセスである。",
+     "ダイレクトマーケティングとは、個人や組織の目標を満足させる交換を創造するために、アイディア、商品、サービスの概念化、価格設定、販売促進、流通を計画し、実行するプロセスである。",
+     "（ダイレクトマーケティングとは）顧客や社会と共に価値を創造し、その価値を広く浸透させることによって、ステークホルダーとの関係性を醸成し、より豊かで持続可能な社会を実現するための構想でありプロセスである。"],
+   correct:0,
+   explanation:"日本ダイレクトマーケティング学会の定義（2021年制定）は①。「顧客を一律のものとして捉えず、データに基づく顧客特性理解を起点とした価値提供を想定している」とされる。",
+   hook:"日本DM学会＝個々に識別した顧客・顧客データ活用・直接働きかけ"},
+
+  {id:4, theme:"4P", type:"不適切を選択", q:"マーケティングの4Pについて誤っているものを一つ選べ",
+   options:[
+     "Price価格：いくらで売るか",
+     "Product製品：何を売るか",
+     "Promotion販促：どう知ってもらうか",
+     "Plan計画：どのような段取りで動くか"],
+   correct:3,
+   explanation:"もう一つのPは「Plan」ではなく、「Place流通：どこで売るか」。問屋や小売店を介して販売するメーカーがD2Cを始めるのは、この「Place」のダイレクト化・デジタル化になる。",
+   hook:"4P＝Product・Price・Place・Promotion（Plan は×）"},
+
+  {id:5, theme:"4C", type:"不適切を選択", q:"マーケティングの4Cについて誤っているものを一つ選べ",
+   options:[
+     "Customer Satisfaction 顧客にとっての満足",
+     "Customer Value顧客にとっての価値",
+     "Communicationコミュニケーション",
+     "Convenienceコンビニエンス"],
+   correct:0,
+   explanation:"もう一つのCは「Customer Satisfaction」ではなく、「Customer Cost：顧客にとっての費用」。なおCustomer Satisfactionは顧客満足で「CS」ともいう。",
+   hook:"4C＝Customer Value・Customer Cost・Communication・Convenience"},
+
+  {id:6, theme:"D2C概論", type:"適切を選択", q:"D2Cに関する下記の説明の中で正しいものを一つ選べ",
+   options:[
+     "D2CとはDigital to Consumerの略である",
+     "D2CとはDirect to Consumerの略である",
+     "D2CとはData to Customerの略である",
+     "D2CとはDirect to Customerの略である"],
+   correct:1,
+   explanation:"D2CとはDirect to Consumerの略。DirectをDigitalと勘違いしたり、Consumer（消費者）をCustomer（顧客）と勘違いしないよう注意。",
+   hook:"Direct to Consumer（Digital×、Customer×）"},
+
+  {id:7, theme:"D2C概論", type:"適切を選択", q:"D2Cと他の◯2◯の違いに関する下記の説明の中で正しいものを一つ選べ",
+   options:[
+     "B2Bは企業と消費者との間取引のことである",
+     "C2Cは消費者に小売店が商品を販売する",
+     "B2Cは企業間の取引のことである",
+     "B2B2Cは、メーカー→問屋や小売店→消費者という取引の流れを表現している"],
+   correct:3,
+   explanation:"B2B2Cの説明は正しい。①B2Bは企業間取引。②C2Cは消費者間取引。③B2Cは企業と消費者との取引。",
+   hook:"B2B＝企業間／B2C＝企業→消費者／C2C＝消費者間／B2B2C＝メーカー→問屋→消費者"},
+
+  {id:8, theme:"D2C定義", type:"適切を選択", q:"D2Cの定義に関する下記の説明の中で正しいものを一つ選べ。",
+   options:[
+     "初期のD2Cでは、既存通販との違いが強調されていた",
+     "初期のD2Cでは、直営店舗での販売も含むとされていた",
+     "D2Cという言葉が広まってきた拡張期では、カタログ通販もD2Cに含まれるようになった",
+     "現在のD2CではオンラインチャネルはD2Cに含まれるがオフライン以外のチャネルを認めていない"],
+   correct:0,
+   explanation:"初期のD2Cはデジタルネイティブ、テック系スタートアップ、ブランドの世界観、ファンマーケティングなど既存通販との違いが強調されていた。",
+   hook:"初期D2C＝既存通販との違いを強調（デジタルネイティブ・テック系・世界観）"},
+
+  {id:9, theme:"D2C定義", type:"適切を選択", q:"D2Cの定義に関する下記の説明の中で正しいものを一つ選べ。",
+   options:[
+     "初期のD2Cでは、直営店舗も含んでいた",
+     "拡張期のD2Cでは、既存のネット通販、メーカー系通販はまだ含まれていない",
+     "D2Cという言葉が広まった拡張期の背景には、新型コロナ禍がある",
+     "現在のD2CでもカタログはD2Cには含まない"],
+   correct:2,
+   explanation:"新型コロナ禍は最初の1年間で日本のデジタル化を10年進めたといわれている。販売のデジタル化＝ダイレクト化ということでD2Cが一気に一般化した。",
+   hook:"拡張期の背景＝コロナ禍（デジタル化を10年分加速）"},
+
+  {id:10, theme:"D2C定義", type:"不適切を選択", q:"D2Cの定義に関する下記の説明の中で誤っているものを一つ選べ。",
+   options:[
+     "初期のD2Cはコアなファン獲得を目指していた",
+     "現在のD2CはダイレクトコデジタルデータのDで顧客体験進化を追求している",
+     "初期のD2Cは、規模の拡大を追求していた",
+     "現在のD2Cはチャネルがオンラインかオフラインかは本質的な問題としていない"],
+   correct:2,
+   explanation:"記述と逆。初期のD2Cは規模の拡大よりも、ブランドの世界観に共感するファンの獲得を目指していた。",
+   hook:"初期D2C＝規模拡大×、ファン獲得○"},
+
+  {id:11, theme:"D2C市場", type:"適切を選択", q:"D2C市場の拡大に関する下記の説明の中で正しいものを一つ選べ。",
+   options:[
+     "新型コロナ禍収束とともに、通販市場は縮小傾向にある",
+     "経産省によるEC化比率の調査では、「化粧品」のEC化比率が突出している",
+     "日本でEC比率が他の商品の分類に比べて低いのは「生活雑貨、家具、インテリア」である",
+     "世界のEC化比率と比べ、日本のEC化比率は成長の余地がまだまだある"],
+   correct:3,
+   explanation:"日本はまだ10％以下だが、世界的には20％を超えさらに成長中。日本のEC化比率は成長の余地が大きい。",
+   hook:"日本EC化率10%以下／世界20%超→日本はまだ成長余地あり"},
+
+  {id:12, theme:"D2C進化", type:"不適切を選択", q:"D2C進化の視点「3つのD」として誤っているものを一つ選べ",
+   options:["Data","Delivery","Digital","Direct"],
+   correct:1,
+   explanation:"3つのDとは「Direct」「Digital」「Data」。「Delivery」は含まれない。",
+   hook:"3つのD＝Direct・Digital・Data（Deliveryは×）"},
+
+  {id:13, theme:"フルフィルメント", type:"不適切を選択", q:"商品が顧客の手元に届くまでに関する下記の説明の中で誤っているものを一つ選べ",
+   options:[
+     "部分ではなく全体に目を向ける",
+     "受注までのプロセスは自社が責任を持つ",
+     "フルフィルメントの重要性を理解する",
+     "各フローの連携レベルがそのブランドの強さ"],
+   correct:1,
+   explanation:"受注「まで」のプロセスだけではなく、受注以降のプロセスを含む全ての価値提供の場面＝顧客体験の責任を持つ必要がある。",
+   hook:"受注「まで」×→受注「以降」も含む全プロセスの責任を持つ"},
+
+  {id:14, theme:"D2C進化", type:"適切を選択", q:"商品が顧客の手元に届くまでに関して「ダイレクト」の視点での進化ポイントについての下記の説明の中で正しいものを一つ選べ",
+   options:[
+     "対象となる顧客の特性を反映した独自の商品設計、ブランドの世界観で統一された媒体=売り場の設計や商品訴求表現、顧客対応スタッフの教育など",
+     "媒体=売り場のデジタル化推進。オンラインショップでの動画の活用、AR/VR(拡張現実、仮想現実)の活用、メタバース、ボット導入、代金決済の多様化など",
+     "媒体・広告制作においては外部委託する場合も多いが、その場合は「下請法」の対象となる",
+     "価値や体験提供強化のアイディアの元となる、顧客の購買行動データの収集、価値観、ライフスタイルの調査、顧客の声のデータベース化など"],
+   correct:0,
+   explanation:"「ダイレクト」の視点で重要なのは、顧客と直接つながっていることから得られる「顧客への価値や体験の提供を全て自分で考え、実行できる」という強みを具体的にどう発揮するかである。",
+   hook:"ダイレクト＝顧客特性反映の商品設計・売り場設計・スタッフ教育"},
+
+  {id:15, theme:"D2C概論", type:"不適切を選択", q:"D2Cの定番商品として誤っているものを一つ選べ",
+   options:["化粧品","健康食品","食品","ペット"],
+   correct:3,
+   explanation:"定番は化粧品・健康食品・食品の①〜③。「ペット」ではなく「ペット用品」「ペットフード」は近年急激に伸びているが、「ペット」は定番商品ではない。",
+   hook:"3大定番＝化粧品・健康食品・食品（ペット×）"},
+
+  {id:16, theme:"価値要素", type:"不適切を選択", q:"価値の向上で意識したい3つの要素に関して誤っているものを一つ選べ",
+   options:[
+     "持続的な価値要素",
+     "客観的な価値要素",
+     "主観的な価値要素",
+     "関係性にまつわる価値要素"],
+   correct:0,
+   explanation:"テキストで説明している価値向上の3つの要素は「客観的な価値要素」「主観的な価値要素」「関係性にまつわる価値要素」の②〜④。「持続的な価値要素」は含まれない。",
+   hook:"価値3要素＝客観的・主観的・関係性（持続的×）"},
+
+  {id:17, theme:"価値要素", type:"適切を選択", q:"主観的な価値要素の説明として正しいものを一つ選べ",
+   options:[
+     "商品の仕様、機能、値段などデータで表すことのできる価値",
+     "個人によって受け止め方が変わる、ブランドの世界観、自然保護活動、フェアトレード、地域社会貢献などと連動した商品企画など",
+     "顧客の声から生まれた新商品、商品開発者との対話の機会、工場見学、ユーザー同士のコミュニティ、商品やサービスのより良い利用方法に関するブランドと顧客との学習の機会など",
+     "媒体=売り場のデジタル化推進。オンラインショップでの動画の活用、AR/VR(拡張現実、仮想現実)の活用、メタバース、ボット導入、代金決済の多様化など"],
+   correct:1,
+   explanation:"②が主観的な価値要素。①は客観的な価値要素、③は関係性にまつわる価値要素、④はD2Cモデルの進化視点「デジタル」の記述。",
+   hook:"主観的＝世界観・フェアトレード・地域貢献など個人によって受け止め方が変わるもの"},
+
+  {id:18, theme:"価値伝達", type:"適切を選択", q:"価値の伝達の説明として正しいものを一つ選べ",
+   options:[
+     "価値の伝達とは商品やサービスの企画のことである",
+     "価値の伝達は媒体を複数組み合わせるとうまくいかないことが多い",
+     "メディアミックスが効果的なのは、新規に顧客を獲得する媒体と、既存顧客との関係性を保つ媒体と分けられることが背景にある",
+     "口コミや紹介の媒体的性質は近年のSNSマーケティングやインフルエンサーマーケティングによって初めてクローズアップされた"],
+   correct:2,
+   explanation:"③が正しい。①の「価値の伝達」は価値の伝え方であり、商品やサービスの企画は「価値の創出」。②は逆で、複数媒体の組み合わせで相乗効果が出る。④も逆で、口コミ・紹介はカタログ通販時代からの定番手法。",
+   hook:"メディアミックス＝新規獲得媒体と既存顧客維持媒体の分担"},
+
+  {id:19, theme:"ダイレクトマーケティング", type:"適切を選択", q:"一般広告とダイレクトマーケティング広告との違いとして正しいものを一つ選べ",
+   options:[
+     "消費者の行動を「興味」から直接「行動」へと導く",
+     "消費者の行動を「注目」から直接「行動」へと導く",
+     "消費者の行動を「記憶」から直接「行動」へと導く",
+     "消費者の行動を「欲求」から直接「行動」へと導く"],
+   correct:3,
+   explanation:"記憶の蓄積から行動へと導くのが一般広告。ダイレクトマーケティング広告は初見で注目→興味→欲求→行動へと一気に導く。よって「欲求」から直接「行動」へ導くのが特徴。",
+   hook:"DM広告＝注目→興味→欲求→行動を一気に（「欲求」から「行動」へ）"},
+
+  {id:20, theme:"フルフィルメント", type:"適切を選択", q:"フルフィルメントに関する下記の説明の中で正しいものを一つ選べ",
+   options:[
+     "商品企画やキャンペーンなどの業務をフルフィルメントという",
+     "オンラインショップ運営の過程で収集したデータ分析業務をフルフィルメントという",
+     "受注、配送、代金回収、アフターサービスの一連の業務をフルフィルメントという",
+     "フルフィルメント業務は顧客から見ると業務委託をされた企業が担当することが多いので、ブランドを評価する要素にはならない"],
+   correct:2,
+   explanation:"③が正しい。フルフィルメントとは受注・配送・代金回収・アフターサービスの一連の業務。顧客が評価する体験の多くにフルフィルメントが関わっており、ブランド評価に直結する。",
+   hook:"フルフィルメント＝受注・配送・代金回収・アフターサービスの一連"},
+
+  {id:21, theme:"フルフィルメント", type:"適切を選択", q:"フルフィルメントに関する下記の説明の中で正しいものを一つ選べ",
+   options:[
+     "コンタクトセンターの重要度は徐々に下がりつつある",
+     "顧客が商品配送箱を開ける瞬間というのは非常に大切な顧客体験の一部である",
+     "物流、配送品質向上のための委託先企業との情報交換に「顧客の声」を反映させる必要はない",
+     "顧客体験の観点からは支払い方法は少ない方が顧客が迷わないので望ましい"],
+   correct:1,
+   explanation:"②が正しい。購入者の心理が高揚している瞬間（真実の瞬間）の一つ。①コンタクトセンターはファン育成の観点から軽視すべきでない。③逆で顧客の声の反映は重要。④支払い方法が少ないと特定の方法を好まない顧客を遠ざける。",
+   hook:"開封体験＝真実の瞬間（心理高揚）の重要な顧客体験"},
+
+  {id:22, theme:"情報システム", type:"不適切を選択", q:"D2Cを支える情報システムに関する下記の説明の中で誤っているものを一つ選べ",
+   options:[
+     "情報システムはD2Cビジネスの要である",
+     "D2Cビジネスでは利益を出すような顧客とはどのような顧客かをあらかじめ知ることはできない",
+     "自社でどのような顧客データが収集されているかを知ることは重要である",
+     "データから読み取ったことを企画立案に活かし、実行した結果、どうなったのかもデータとして蓄積し、次の企画に活かしていく"],
+   correct:1,
+   explanation:"逆。すでに蓄積されている顧客の属性データや購買行動履歴データ、アンケートへの回答などから、かなり明確に優良顧客の姿は浮き彫りにできる。",
+   hook:"蓄積データ→優良顧客の姿は事前に把握できる"},
+
+  {id:23, theme:"ワンダーマン", type:"適切を選択", q:"ワンダーマンが提唱したマーケティングについて正しいものを一つ選べ。",
+   options:[
+     "データドリブンマーケティング",
+     "ダイレクトマーケティング",
+     "デジタルマーケティング",
+     "インフルエンサーマーケティング"],
+   correct:1,
+   explanation:"ワンダーマンが提唱したのはダイレクトマーケティング。",
+   hook:"ワンダーマン＝ダイレクトマーケティングの提唱者"},
+
+  {id:24, theme:"ワンダーマン", type:"穴埋め", q:"ワンダーマンの19のルール「主役は◯◯ではなく、消費者である」の◯◯に入る言葉として、下記の中で正しいものを一つ選べ",
+   options:["製品","広告","ブランド","企業"],
+   correct:0,
+   explanation:"「主役は製品ではなく、消費者である」。顧客中心主義の根幹をなす考え方。",
+   hook:"ワンダーマン＝主役は「製品」ではなく消費者"},
+
+  {id:25, theme:"ワンダーマン", type:"穴埋め", q:"ワンダーマンの19のルール「ブランド◯◯を作る」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["イメージ","メッセージ","製品","体験"],
+   correct:3,
+   explanation:"「ブランド体験を作る」。体験こそがブランドを構築する。",
+   hook:"ワンダーマン＝ブランド「体験」を作る"},
+
+  {id:26, theme:"ワンダーマン", type:"穴埋め", q:"ワンダーマンの19のルール「ロイヤリティ『忠誠心』を高める意図のもとで◯◯する」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["顧客を獲得する","顧客を育成する","商品を企画する","広告を制作する"],
+   correct:0,
+   explanation:"「ロイヤリティを高める意図のもとで顧客を獲得する」。最初から忠誠心を育てる目的で顧客獲得を行う。",
+   hook:"ワンダーマン＝ロイヤリティ目的で「顧客を獲得」"},
+
+  {id:27, theme:"顧客中心主義", type:"適切を選択", q:"顧客中心主義が定着した背景として下記の中で正しいものを一つ選べ",
+   options:[
+     "顧客の年代の多様化",
+     "一人暮らし世代の増加",
+     "平均所得の減少",
+     "顧客の嗜好の多様化"],
+   correct:3,
+   explanation:"顧客の嗜好の多様化が背景。顧客を一様に捉えないことが大切。",
+   hook:"顧客中心主義の背景＝嗜好の多様化"},
+
+  {id:28, theme:"顧客中心主義", type:"穴埋め", q:"「D2Cで『世界観』という言葉が多用されるのは『◯◯性』を安易に受け入れず、『異質性』や『独自性』を求める顧客が増えてきたからです。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["共同","明示","同質","象徴"],
+   correct:2,
+   explanation:"「同質性」を安易に受け入れず、異質性や独自性を求める顧客が増えた。同じ流行に一斉に従わず「自分が共感できるか」という発想。",
+   hook:"「同質性」を受け入れず異質性・独自性を求める顧客が増加"},
+
+  {id:29, theme:"顧客中心主義", type:"適切を選択", q:"顧客中心主義における製品のアピール方法に関する下記の文章の中で正しいものを一つ選べ",
+   options:[
+     "製品の特徴や他社優位性を強調する",
+     "顧客個々のニーズといかにマッチしているかを強調する",
+     "期間限定の特別価格であることをアピールする",
+     "有名人の推奨があることをアピールする"],
+   correct:1,
+   explanation:"顧客中心主義では「顧客にとっての価値」を伝える。顧客個々のニーズといかにマッチしているかを強調するのが正しいアプローチ。",
+   hook:"顧客中心主義のアピール＝顧客ニーズとのマッチング"},
+
+  {id:30, theme:"顧客中心主義", type:"適切を選択", q:"顧客中心主義におけるビジネスの考え方に関する下記の文章の中で正しいものを一つ選べ",
+   options:[
+     "関係性構築志向",
+     "ブランド構築志向",
+     "取引志向",
+     "マーケットシェア獲得志向"],
+   correct:0,
+   explanation:"顧客中心主義では、顧客との中長期な関係性の中で収益を得ようと考える。関係性構築志向が正しい。",
+   hook:"顧客中心主義のビジネス観＝関係性構築志向"},
+
+  {id:31, theme:"顧客中心主義", type:"適切を選択", q:"顧客中心主義における販売の姿勢に関する下記の文章の中で正しいものを一つ選べ",
+   options:[
+     "我々はこの製品をどれだけたくさんの顧客に販売できるだろうか",
+     "我々はこの顧客にどれだけたくさんの製品を販売できるだろうか",
+     "我々はこの顧客にどれだけ安価に製品を販売できるだろうか",
+     "我々はこの製品をどれだけ高価に顧客に販売できるだろうか"],
+   correct:1,
+   explanation:"「この顧客」か「この製品」か、という違いが顧客中心主義と製品中心主義を分ける。顧客中心主義は「この顧客にどれだけたくさんの製品を」という視点。",
+   hook:"顧客中心＝「この顧客」に多くの製品／製品中心＝「この製品」を多くの顧客へ"},
+
+  {id:32, theme:"顧客中心主義", type:"穴埋め", q:"「製品をヒットさせること」が製品中心のマーケティングで「顧客を獲得して、◯◯こと」が顧客中心のマーケティングということもできそうです。」の◯◯に入るものを下記の中から一つ選べ",
+   options:[
+     "優良顧客にまで導く",
+     "新規顧客をどんどん増やす",
+     "知名度を高める",
+     "マーケットシェアを高める"],
+   correct:0,
+   explanation:"顧客中心のマーケティングは「顧客を獲得して、優良顧客にまで導くこと」。関係性構築志向と同じ考え方。",
+   hook:"顧客中心マーケティング＝獲得した顧客を優良顧客へ導く"},
+
+  {id:33, theme:"お財布シェア", type:"適切を選択", q:"お財布シェアに関する下記の文章の中で正しいものを一つ選べ",
+   options:[
+     "ある顧客が購入する自社製品の中の新製品の割合",
+     "ある製品ジャンル全体の市場売上の中での、自社製品の売上の割合",
+     "ある製品ジャンル全体の新製品数の中で自社製品がどれだけ含まれているかの割合",
+     "ある顧客がその製品ジャンルに支出する金額の中で、自社製品がどれだけ含まれているか"],
+   correct:3,
+   explanation:"お財布シェア（Share of Wallet）とは、ある顧客がその製品ジャンルに支出する金額の中で自社製品がどれだけ含まれているかの割合。英語のShare of Walletから来ている。",
+   hook:"お財布シェア(Share of Wallet)＝顧客のジャンル支出中の自社比率"},
+
+  {id:34, theme:"LTV・収益構造", type:"穴埋め", q:"「通販というビジネスは、◯◯、商品原価、配送料などを積み上げていくと、初回購入の時点では大きな赤字が出ていて、だいたい4回目くらいの購入から利益が出始める」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:[
+     "社員の給料",
+     "オフィスの家賃",
+     "広告媒体にかかる費用",
+     "製造設備の費用"],
+   correct:2,
+   explanation:"新規顧客獲得の費用の中で「広告媒体にかかる費用」は大きな割合を占める。初回は広告費+商品原価+配送料で赤字になりやすい。",
+   hook:"初回赤字の主因＝広告媒体費用（4回目頃から黒字化）"},
+
+  {id:35, theme:"LTV・収益構造", type:"穴埋め", q:"「多くのD2C企業が、定期購入への早期誘導に力を入れているのは、このような顧客獲得時の赤字を◯◯によって黒字転換させる構造が背景の一つにあります。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:[
+     "さらに多くの新規顧客獲得",
+     "広告費の節約",
+     "ブランディング",
+     "継続購入"],
+   correct:3,
+   explanation:"「継続購入」によって顧客獲得時の赤字を黒字転換させる構造。継続購入（定期購入）する顧客の割合を増やすことはD2C企業成長の大きな要件。",
+   hook:"定期購入誘導＝継続購入で初回赤字を黒字転換させる"},
+
+  {id:36, theme:"LTV・収益構造", type:"穴埋め", q:"「1:◯の法則というビジネス上の言い回しがあります。大雑把な話ではありますが、新規顧客に商品を購入してもらうコストは既存顧客の約◯倍かかるという意味です。」の◯に入る数字として下記の中で正しいものを一つ選べ",
+   options:["3","5","15","20"],
+   correct:1,
+   explanation:"「1:5の法則」。新規顧客獲得コストは既存顧客の約5倍。昨今の新顧客獲得コスト上昇を考えると1:5どころではないD2C企業も多い。",
+   hook:"1:5の法則＝新規獲得コストは既存顧客の5倍"},
+
+  {id:37, theme:"LTV・収益構造", type:"穴埋め", q:"「離脱する顧客の数を5%少なくすると、利益率が◯◯%増える」の◯◯に入る数字として下記の中で正しいものを一つ選べ",
+   options:["15","20","25","30"],
+   correct:2,
+   explanation:"「5:25の法則」。離脱する顧客を5%減らすと利益率が25%増える。1:5の法則と5:25の法則はセットで覚える。",
+   hook:"5:25の法則＝離脱5%減→利益率25%増"},
+
+  {id:38, theme:"法規制", type:"穴埋め", q:"「消費者が紙面やインターネット上の広告から情報を得て、実物を見ずに商品購入の意思決定を行うD2Cにおいては、◯◯の観点から様々な法規制があります。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:[
+     "消費者保護",
+     "環境保護",
+     "下請け事業者の保護",
+     "小売店保護"],
+   correct:0,
+   explanation:"消費者保護の観点から法規制がある。行政による法規制の根本にある考え方として重要。",
+   hook:"D2C法規制の根本＝消費者保護"},
+
+  {id:39, theme:"デジタル・スマホ", type:"穴埋め", q:"「2014年にスマホの接触時間が◯◯を上回ります。そして2022年にはスマホの接触時間がテレビを上回りました。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["新聞","雑誌","ラジオ","PC"],
+   correct:3,
+   explanation:"2014年にスマホの接触時間がPCを上回り、この頃から急激にデジタル＆モバイルシフトが進む。",
+   hook:"2014年：スマホ>PC、2022年：スマホ>テレビ"},
+
+  {id:40, theme:"デジタル・スマホ", type:"穴埋め", q:"「スマホの持つ特徴として、カメラ、センサー、◯◯がある」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["軽さ","アプリ","Suica","音声"],
+   correct:1,
+   explanation:"スマホの特徴はカメラ・センサー・アプリ。この組み合わせはスマホによる顧客体験進化を考える際に非常に重要。",
+   hook:"スマホ3特徴＝カメラ・センサー・アプリ"},
+
+  {id:41, theme:"One to One", type:"穴埋め", q:"「One to Oneマーケティングという言葉が1990年代に登場し、すっかり定番マーケティング用語となりました。それまでの◯◯を対象にしたマーケティングから、特定個人を対象にしたマーケティングへの移行です。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:["不特定多数","国内","企業","流行の先端"],
+   correct:0,
+   explanation:"不特定多数（いわゆる大衆）を対象にしたマーケティングから、特定個人を対象にしたOne to Oneマーケティングへ。スマホが無い時代の非常に先進的な考え方として脚光を浴びた。",
+   hook:"One to One＝不特定多数→特定個人へのシフト（1990年代登場）"},
+
+  {id:42, theme:"オムニチャネル", type:"適切を選択", q:"オムニチャネルに関する説明に関して下記の中で正しいものを一つ選べ",
+   options:[
+     "チャネルがいくつかあるが、各チャネルの固有の機能をそのまま提供している",
+     "チャネルがいくつかあるが、各チャネルのオペレーションは独立している",
+     "チャネルがいくつかあるが、チャネルを意識することなく、一つのブランドに見える",
+     "チャネルがいくつかあるが、同じブランドを構成する一部に見える"],
+   correct:2,
+   explanation:"「チャネルを意識することなく」というのがキーワード。渾然一体・融合といったイメージがオムニチャネル。③と④の違いは「意識することなく」=完全融合か、「一部に見える」=部分的統合か。",
+   hook:"オムニチャネル＝チャネルを意識することなく一つのブランドに見える"},
+
+  {id:43, theme:"価値要素", type:"穴埋め", q:"「あるブランドの世界観に強く共感し、おなじように共感している人々が集まるコミュニティがあったら、そこはその人にとって、最高に居心地のよい場所になります。これは『◯◯』の重要な一部です。」の◯◯に入る言葉として下記の中で正しいものを一つ選べ",
+   options:[
+     "客観的な価値要素",
+     "関係性にまつわる価値要素",
+     "主観的な価値要素",
+     "快適性にまつわる価値要素"],
+   correct:1,
+   explanation:"「関係性にまつわる価値要素」においてコミュニティの存在は非常に重要。",
+   hook:"コミュニティ＝関係性にまつわる価値要素の重要な一部"},
+
+  {id:44, theme:"AI活用", type:"穴埋め", q:"「今後は□□だけではなく、◯◯を提供するためにAIが活用されていくでしょう。」という文章の□□と◯◯の組み合わせとして、下記の中で正しいものを一つ選べ",
+   options:[
+     "コスト削減／自動化",
+     "自動化／より良い顧客体験",
+     "コスト削減／より良い顧客体験",
+     "データ収集／コスト削減"],
+   correct:2,
+   explanation:"「コスト削減だけでなく、より良い顧客体験を提供するためにAIが活用される」。この両者をいかに両立するかが今後のD2C企業の重要な課題。",
+   hook:"AIの今後＝コスト削減+より良い顧客体験の両立"},
+
+  {id:45, theme:"顧客データ分析", type:"適切を選択", q:"顧客データを分析し、活用することの目的についての下記の文章の中で正しいのものを一つ選べ。",
+   options:[
+     "自社顧客の優良化のプロセスを知り、再現する",
+     "他社が自社よりも勝っているポイントを知り、改良につなげる",
+     "広告宣伝の表現を洗練させ、反応率を上げる",
+     "市場における知名度を上げ、ブランド力を強化する"],
+   correct:0,
+   explanation:"他の選択肢もマーケティングで必要な取組みだが、顧客データ分析・活用の最大目的は「自社顧客の優良化のプロセスを知り、再現すること」。「再現性」はデータによる科学的マーケティングの重要キーワード。",
+   hook:"顧客データ分析の目的＝優良化プロセスの把握と再現"},
+
+  {id:46, theme:"セグメンテーション", type:"不適切を選択", q:"セグメンテーション変数に関する下記の説明の中で誤っているものを一つ選べ。",
+   options:[
+     "地理的（ジオグラフィック）変数は都市か地方か、温暖か寒冷かなど地域の特性です。",
+     "人口統計的（デモグラフィック）変数は年齢、性別、家族構成、学歴、所得、職業、などの個人属性です。",
+     "心理的（サイコグラフィック）変数は購入までにどのような心理的変化があったのか、ブランドへの信頼性が強まったかどうかなどです。",
+     "行動変数は過去の購買歴、利用頻度、購買パターン、返品特性などです。"],
+   correct:2,
+   explanation:"心理的（サイコグラフィック）変数はライフスタイル・パーソナリティ・価値観などのこと。購入までの心理的変化やブランドへの信頼性の変化は行動変数に近い説明。",
+   hook:"サイコグラフィック＝ライフスタイル・パーソナリティ・価値観"},
+
+  {id:47, theme:"セグメンテーション", type:"適切を選択", q:"セグメンテーション変数の中で、より深い顧客理解の観点から特にD2C企業が重視すべきものはどれか。正しいものを一つ選べ。",
+   options:[
+     "地理的（ジオグラフィック）変数",
+     "人口統計的（デモグラフィック）変数",
+     "心理的（サイコグラフィック）変数",
+     "行動変数"],
+   correct:3,
+   explanation:"一般的なマーケティングでは地理的・人口統計的・心理的変数が主に使われる。D2Cでは行動変数も使うことでより深い顧客理解が可能。",
+   hook:"D2Cが重視するセグメンテーション変数＝行動変数"},
+
+  {id:48, theme:"データ分析", type:"不適切を選択", q:"データ分析や仮説に関する下記の説明の中で誤っているものを一つ選べ。",
+   options:[
+     "データ・マイニングでは、なるべく多くのデータを集めて、いわゆる「ビールと紙おむつは同時に売れる」などという事実を見つけ出す",
+     "モデリングとは、そこから一歩進んで、それを一般的な別の事例に適用できるようにモデルを作る作業で、いままでになかった事例について予測を行う",
+     "そのモデルを使って、たとえば、会社の利益を上げるための現実的かつ最善の方法を求めるのが最適化である",
+     "データ分析をする際には「仮説修正型」と「仮説検証型」の2つのアプローチがある"],
+   correct:3,
+   explanation:"「仮説修正型」ではなく「仮説探索型」が正しい。2つのアプローチは「仮説探索型」と「仮説検証型」。",
+   hook:"データ分析2アプローチ＝仮説探索型・仮説検証型（修正型×）"},
+
+  {id:49, theme:"D2C人材", type:"不適切を選択", q:"カタログ通販時代から重要なベーススキルとして、下記の中で誤っているものを一つ選べ。",
+   options:[
+     "顧客の購買行動分析スキル",
+     "統合データベース管理スキル",
+     "顧客対応スキル（コールセンター、メール、HP問い合わせ対応など）",
+     "HP、カタログ、DM等の媒体制作スキル"],
+   correct:1,
+   explanation:"「統合データベース管理スキル」は、カタログ通販がオンラインショップや直営店舗など多チャネル展開することで必要となった「デジタル・オムニチャネル時代のスキル」であり、カタログ通販時代からのスキルではない。",
+   hook:"統合DB管理＝デジタル・オムニチャネル時代のスキル（カタログ時代×）"},
+
+  {id:50, theme:"D2C人材", type:"不適切を選択", q:"D2C専門人材モデルとして、下記の中で誤っているものを一つ選べ。",
+   options:[
+     "製品戦略に基づくコミュニケーション設計者としての人材",
+     "情報の蓄積／活用から得られる価値を創造する人材",
+     "マーケティングROIを経営層に説明できる人材",
+     "各チャネル、社内各部署、協力会社などを統合するマネジメント／リーダーシップ力を持つ人材"],
+   correct:0,
+   explanation:"「製品戦略」ではなく「顧客戦略」に基づくコミュニケーション設計者が正しい。D2C専門人材は顧客中心主義に基づく顧客戦略が軸。",
+   hook:"D2C人材コミュニケーション設計＝顧客戦略（製品戦略×）"}
+];
+
+const MARK = ["①","②","③","④"];
+const app = document.getElementById("app");
+
+/* ===== 共通ユーティリティ ===== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+/* ===== モード切替 ===== */
+let currentMode = "flash";
+document.getElementById("tabs").addEventListener("click", e=>{
+  const btn = e.target.closest(".tabs__btn");
+  if(!btn) return;
+  currentMode = btn.dataset.mode;
+  document.querySelectorAll(".tabs__btn").forEach(b=>b.classList.toggle("tabs__btn--active", b===btn));
+  render();
+});
+
+function render(){
+  if(currentMode==="test") renderTest();
+  else renderFlash();
+}
+
+/* ===== 暗記カードモード ===== */
+let flashIdx = 0;
+let flashRevealed = false;
+function renderFlash(){
+  const q = QUESTIONS[flashIdx];
+  const revealed = flashRevealed;
+  const opts = q.options.map((t,i)=>{
+    const isC = i===q.correct;
+    const cls = revealed && isC ? "opt opt--correct" : "opt";
+    return `<div class="${cls}"><span class="opt__num">${MARK[i]}</span><span>${t}</span></div>`;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="progress">
+      <span>${flashIdx+1} / ${QUESTIONS.length}</span>
+      <div class="progress__bar"><div class="progress__fill" style="width:${(flashIdx+1)/QUESTIONS.length*100}%"></div></div>
+    </div>
+    <div class="card">
+      <div class="card__meta"><span class="tag">問${q.id}・${q.theme}</span><span class="tag tag--type">${q.type}</span></div>
+      <p class="card__q">${q.q}</p>
+      <div class="opts">${opts}</div>
+      <div class="reveal">
+        ${revealed ? `
+          <div class="explain explain--show">
+            <p class="verdict verdict--ok">正解：${MARK[q.correct]}</p>
+            <p class="explain__line"><span class="explain__label">解説：</span>${q.explanation}</p>
+            <p class="explain__line explain__hook">💡 ${q.hook}</p>
+          </div>` : `<button class="btn btn--primary" id="revealBtn">答えを見る</button>`}
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn btn--ghost btn--sm" id="prevBtn">← 前へ</button>
+      <button class="btn btn--ghost btn--sm" id="nextBtn">次へ →</button>
+    </div>`;
+
+  const rb = document.getElementById("revealBtn");
+  if(rb) rb.onclick = ()=>{ flashRevealed = true; renderFlash(); };
+  document.getElementById("prevBtn").onclick = ()=>{ flashIdx=(flashIdx-1+QUESTIONS.length)%QUESTIONS.length; flashRevealed=false; renderFlash(); };
+  document.getElementById("nextBtn").onclick = ()=>{ flashIdx=(flashIdx+1)%QUESTIONS.length; flashRevealed=false; renderFlash(); };
+}
+
+/* ===== テストモード ===== */
+let testState = null;
+
+function renderTest(){
+  if(!testState) return renderTestStart();
+  if(testState.idx >= testState.order.length) return renderTestResult();
+  renderTestQuestion();
+}
+
+function renderTestStart(){
+  app.innerHTML = `
+    <div class="controls">
+      <label><input type="checkbox" id="shufQ" checked> 問題をシャッフル</label>
+      <label><input type="checkbox" id="shufO" checked> 選択肢をシャッフル</label>
+    </div>
+    <div class="card result">
+      <p class="result__msg">全50問を自己採点します。<br>選択肢シャッフルをONにすると、番号暗記に頼らず本番に強くなります。</p>
+      <button class="btn btn--primary" id="startBtn">テスト開始</button>
+    </div>`;
+  document.getElementById("startBtn").onclick = ()=>{
+    const shufQ = document.getElementById("shufQ").checked;
+    const shufO = document.getElementById("shufO").checked;
+    const order = shufQ ? shuffle(QUESTIONS.map((_,i)=>i)) : QUESTIONS.map((_,i)=>i);
+    const optOrders = QUESTIONS.map(q=> shufO ? shuffle(q.options.map((_,i)=>i)) : q.options.map((_,i)=>i));
+    testState = {order, optOrders, answers:[], idx:0, shufQ, shufO};
+    renderTest();
+  };
+}
+
+function renderTestQuestion(){
+  const qi = testState.order[testState.idx];
+  const q = QUESTIONS[qi];
+  const optOrder = testState.optOrders[qi];
+  const answered = testState.answers[testState.idx];
+
+  const opts = optOrder.map((origIdx, dispPos)=>{
+    let cls = "opt";
+    if(answered){
+      if(origIdx===q.correct) cls="opt opt--correct";
+      else if(origIdx===answered.chosenOrig) cls="opt opt--wrong";
+    }
+    return `<button class="${cls}" data-orig="${origIdx}" ${answered?"disabled":""}>
+      <span class="opt__num">${MARK[dispPos]}</span><span>${q.options[origIdx]}</span></button>`;
+  }).join("");
+
+  let explainHtml = "";
+  if(answered){
+    const ok = answered.chosenOrig===q.correct;
+    explainHtml = `
+      <div class="explain explain--show">
+        <p class="verdict ${ok?"verdict--ok":"verdict--ng"}">${ok?"⭕ 正解":"❌ 不正解"}（正答：${q.options[q.correct]}）</p>
+        <p class="explain__line"><span class="explain__label">解説：</span>${q.explanation}</p>
+        <p class="explain__line explain__hook">💡 ${q.hook}</p>
+      </div>
+      <button class="btn btn--primary" id="nextBtn" style="margin-top:14px;">${testState.idx===testState.order.length-1?"結果を見る":"次の問題 →"}</button>`;
+  }
+
+  const correctCount = testState.answers.filter(a=>a && a.ok).length;
+  app.innerHTML = `
+    <div class="progress">
+      <span>${testState.idx+1} / ${testState.order.length}</span>
+      <div class="progress__bar"><div class="progress__fill" style="width:${(testState.idx)/testState.order.length*100}%"></div></div>
+      <span>正解 ${correctCount}</span>
+    </div>
+    <div class="card">
+      <div class="card__meta"><span class="tag">問${q.id}・${q.theme}</span><span class="tag tag--type">${q.type}</span></div>
+      <p class="card__q">${q.q}</p>
+      <div class="opts">${opts}</div>
+      ${explainHtml}
+    </div>`;
+
+  if(!answered){
+    app.querySelectorAll(".opt").forEach(btn=>{
+      btn.onclick = ()=>{
+        const chosenOrig = parseInt(btn.dataset.orig,10);
+        testState.answers[testState.idx] = {chosenOrig, ok: chosenOrig===q.correct};
+        renderTest();
+      };
+    });
+  } else {
+    document.getElementById("nextBtn").onclick = ()=>{ testState.idx++; renderTest(); };
+  }
+}
+
+function renderTestResult(){
+  const total = testState.order.length;
+  const correct = testState.answers.filter(a=>a && a.ok).length;
+  const pct = Math.round(correct/total*100);
+  const pass = pct>=70;
+  const wrong = testState.order.map((qi,pos)=>({qi,a:testState.answers[pos]}))
+    .filter(x=>x.a && !x.a.ok)
+    .map(x=>{
+      const q = QUESTIONS[x.qi];
+      return `<div class="sheet__row">
+        <div class="sheet__no">${q.id}</div>
+        <div class="sheet__body">
+          <div class="sheet__theme">${q.theme}</div>
+          <div class="sheet__ans">正解 <b>${q.options[q.correct]}</b></div>
+          <div class="sheet__hook">💡 ${q.hook}</div>
+        </div></div>`;
+    }).join("");
+
+  app.innerHTML = `
+    <div class="card result">
+      <p class="result__msg">${pass?"🎉 合格ライン（70%）クリア！":"もう少し！復習しよう"}</p>
+      <div class="result__score" style="color:${pass?"var(--c-correct)":"var(--c-wrong)"}">${pct}<small>％</small></div>
+      <p class="result__msg">${total}問中 ${correct}問正解</p>
+      <button class="btn btn--primary" id="retryBtn" style="margin-top:14px;">もう一度</button>
+    </div>
+    ${wrong ? `<div class="note">間違えた問題（復習）</div><div class="card">${wrong}</div>` : `<div class="note">全問正解！この調子で番号ではなく中身を維持しましょう。</div>`}`;
+  document.getElementById("retryBtn").onclick = ()=>{ testState=null; renderTest(); };
+}
+
+/* 初期表示 */
+render();
+</script>
+</body>
+</html>
